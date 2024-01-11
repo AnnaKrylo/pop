@@ -1,0 +1,103 @@
+import pygame
+from pygame.locals import *
+
+pygame.init()
+
+# Определение размеров экрана
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 400
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Платформа и шарик")
+
+WHITE = (0, 0, 0)
+BLUE = (150, 150, 255)
+RED = (255, 0, 0)
+PLATFORM_WIDTH = 100
+PLATFORM_HEIGHT = 20
+BALL_RADIUS = 10
+PLATFORM_SPEED = 5
+clock = pygame.time.Clock()
+
+
+class Platform:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.width = PLATFORM_WIDTH
+        self.height = PLATFORM_HEIGHT
+        self.speed = PLATFORM_SPEED
+
+    def draw(self):
+        pygame.draw.rect(screen, BLUE, (self.x, self.y, self.width, self.height))
+
+    def move_left(self):
+        self.x -= self.speed
+        if self.x < 0:
+            self.x = 0
+
+    def move_right(self):
+        self.x += self.speed
+        if self.x > SCREEN_WIDTH - self.width:
+            self.x = SCREEN_WIDTH - self.width
+
+
+class Ball:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.radius = BALL_RADIUS
+        self.speed_x = 3
+        self.speed_y = -3
+
+    def draw(self):
+        pygame.draw.circle(screen, RED, (self.x, self.y), self.radius)
+
+    def update(self):
+        self.x += self.speed_x
+        self.y += self.speed_y
+
+        if self.x <= 0 + self.radius or self.x >= SCREEN_WIDTH - self.radius:
+            self.speed_x = -self.speed_x
+
+        if self.y <= 0 + self.radius:
+            self.speed_y = -self.speed_y
+
+        if self.y >= SCREEN_HEIGHT - self.radius:
+            self.x = SCREEN_WIDTH // 2
+            self.y = SCREEN_HEIGHT // 2
+            self.speed_x = 3
+            self.speed_y = -3
+
+        if platform.x < self.x < platform.x + platform.width and \
+                platform.y - self.radius <= self.y <= platform.y + platform.height:
+            self.speed_y = -self.speed_y
+
+
+# Создание объектов платформы и шарика
+platform = Platform(SCREEN_WIDTH // 2 - PLATFORM_WIDTH // 2, SCREEN_HEIGHT - PLATFORM_HEIGHT - 10)
+ball = Ball(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            running = False
+
+    keys = pygame.key.get_pressed()
+    if keys[K_LEFT]:
+        platform.move_left()
+    if keys[K_RIGHT]:
+        platform.move_right()
+
+    # Очистка экрана и отрисовка платформы и шарика
+    screen.fill(WHITE)
+    platform.draw()
+    ball.draw()
+
+    # Обновление координат шарика
+    ball.update()
+
+    pygame.display.update()
+    clock.tick(60)
+
+pygame.quit()
