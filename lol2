@@ -1,58 +1,25 @@
-import pygame
-import math
+import csv
+import json
 
-# инициализация Pygame
-pygame.init()
+def read_wishes(filename):
+    wishes = []
+    with open(filename, 'r', newline='') as file:
+        reader = csv.DictReader(file, delimiter='_')
+        for row in reader:
+            wishes.append(row)
+    return wishes
 
-# размеры окна
-width = 400
-height = 300
+def write_witchcraft(witchcraft_list, filename):
+    with open(filename, 'w') as file:
+        json.dump(witchcraft_list, file, indent=4)
 
-# создание окна
-screen = pygame.display.set_mode((width, height))
+def main():
+    wishes = read_wishes('wishes.csv')
+    witchcraft_list = []
+    for person in wishes:
+        if len(person['wish1'].split()) <= 3 and len(person['wish2'].split()) <= 3 and len(person['wish3'].split()) <= 3:
+            witchcraft_list.append({'name': person['name'], 'age': person['age']})
+    write_witchcraft(witchcraft_list, 'witchcraft.json')
 
-# установка названия окна
-pygame.display.set_caption("Кликер")
-
-# цвета
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-
-# радиус и скорость шарика
-radius = 10
-speed = 100
-
-# список координат и скоростей шариков
-balls = []
-
-# обработчик событий
-while True:
-    for event in pygame.event.get():
-        # если нажата левая кнопка мыши
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            # получение координат курсора мыши
-            pos = pygame.mouse.get_pos()
-            # добавление координат и скоростей нового шарика
-            balls.append([pos[0], pos[1], speed / math.sqrt(2), -speed / math.sqrt(2)])
-
-    # закраска фона
-    screen.fill(BLACK)
-
-    # отрисовка и движение шариков
-    for ball in balls:
-        # отрисовка шарика
-        pygame.draw.circle(screen, WHITE, [int(ball[0]), int(ball[1])], radius)
-        # обновление координат
-        ball[0] += ball[2] / 60
-        ball[1] += ball[3] / 60
-        # проверка на столкновение со стенками окна
-        if ball[0] < radius or ball[0] > width - radius:
-            ball[2] = -ball[2]
-        if ball[1] < radius or ball[1] > height - radius:
-            ball[3] = -ball[3]
-
-    # обновление окна
-    pygame.display.update()
-
-    # задержка
-    pygame.time.delay(10)
+if __name__ == "__main__":
+    main()
