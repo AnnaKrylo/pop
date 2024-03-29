@@ -1,35 +1,48 @@
-import json
-import requests
+import sqlite3
+import csv
 
-def fetch_data(host, port):
-    url = f"http://{host}:{port}"
-    response = requests.get(url)
-    data = response.json()
-    return data
+# Функция для чтения данных из базы данных
+def read_from_database(database_file):
+    conn = sqlite3.connect(database_file)
+    c = conn.cursor()
 
-def find_solace_books(data, words, max_length):
-    solace_books = []
-    for title, description in data.items():
-        if any(word in title for word in words) and len(title) <= max_length:
-            unique_plots = set(description.split(", "))
-            if len(unique_plots) <= len(title.split()):
-                solace_books.append(title)
-    return sorted(solace_books)
+    # Получаем данные о мирах
+    c.execute("SELECT id, name, danger_id FROM Worlds")
+    worlds_data = c.fetchall()
 
-def main():
-    # Чтение данных из файла solace.json
-    with open("solace.json", "r") as file:
-        solace_data = json.load(file)
+    # Получаем данные об опасностях
+    c.execute("SELECT id, danger, character, level FROM Dangers")
+    dangers_data = c.fetchall()
 
-    # Получение данных с сервера
-    server_data = fetch_data(solace_data["host"], solace_data["port"])
+    conn.close()
+    return worlds_data, dangers_data
 
-    # Поиск утешительных книг
-    solace_books = find_solace_books(server_data, solace_data["words"], solace_data["long"])
+# Функция для записи данных в CSV файл
+def write_to_csv(filtered_worlds, filename):
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(['no', 'world', 'danger', 'character'])
+        for row in filtered_worlds:
+            writer.writerow(row)
 
-    # Вывод результатов
-    for book in solace_books:
-        print(book)
+# Функция для фильтрации данных
+def filter_worlds(worlds_data, dangers_data, levels, word):
+    filtered_worlds = []
+    for world in worlds_data:
+        world_id, world_name, danger_id = world
+        for danger in dangers_data:
+            danger_id_db, danger_name, character, danger_level = danger
+            if danger_id_db == danger_id and danger_level in levels:
+                if word.lower() in world_name.lower():
+                    filtered_worlds.append([world_id, world_name, danger_name, character])
+                    break
+    return filtered_worlds
 
-if __name__ == "__main__":
-    main()
+# Основная часть программы
+database_file = input().strip()
+levels = input().strip().split()
+word = input().strip()
+
+worlds_data, dangers_data = read_from_database(database_file)
+filtered_worlds = filter_worlds(worlds_data, dangers_data, levels, word)
+write_to_csv(filtered_worlds, 'snakehounds.csv')
