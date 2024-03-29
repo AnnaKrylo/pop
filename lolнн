@@ -1,0 +1,33 @@
+from flask import Flask, jsonify
+import sqlite3
+import json
+
+app = Flask(__name__)
+
+def load_config():
+    with open('unclear.json', 'r') as f:
+        config = json.load(f)
+    return config
+
+def fetch_words(config):
+    conn = sqlite3.connect(config['filename'])
+    c = conn.cursor()
+    words = {}
+
+    for subject in config['subjects']:
+        c.execute("SELECT word, means FROM Talks WHERE who_said=? AND understanding<=?", (subject, config['difficulty']))
+        subject_words = c.fetchall()
+        words[subject] = {word: means for word, means in subject_words}
+
+    conn.close()
+    return words
+
+@app.route('/words')
+def get_words():
+    config = load_config()
+    words = fetch_words(config)
+    return jsonify(words)
+
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=8000)
+
